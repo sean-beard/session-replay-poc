@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Session Replay - POC</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/style.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.6;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .header h1 {
+        color: #333;
+        font-size: 24px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+
+      .btn-small {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+
+      @media (max-width: 1024px) {
+        .content-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .sidebar {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar h2 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 18px;
+      }
+
+      .upload-section {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .file-input-wrapper input[type="file"] {
+        position: absolute;
+        left: -9999px;
+      }
+
+      .file-input-label {
+        display: block;
+        padding: 10px 15px;
+        background: #667eea;
+        color: white;
+        text-align: center;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .file-input-label:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+      }
+
+      .file-name {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        word-break: break-all;
+      }
+
+      .sessions-list {
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .session-item {
+        background: #f9fafb;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+      }
+
+      .session-item:hover {
+        background: #f3f4f6;
+        transform: translateX(4px);
+      }
+
+      .session-item.active {
+        border-color: #667eea;
+        background: #eef2ff;
+      }
+
+      .session-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+
+      .session-meta {
+        font-size: 11px;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+
+      .session-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .player-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-height: 500px;
+      }
+
+      .player-wrapper {
+        margin-top: 20px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+      }
+
+      .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+      }
+
+      .empty-state h3 {
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .session-info-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .session-info-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .session-info-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .message {
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+
+      .message-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+      }
+
+      .message-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+      }
+
+      .message-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #3b82f6;
+      }
+
+      /* Custom scrollbar */
+      .sessions-list::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .sessions-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      .sessions-list::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+
+      .sessions-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>▶️ Session Replay</h1>
+        <div class="header-actions">
+          <button
+            class="btn-primary"
+            onclick="window.location.href='record.html'"
+          >
+            🎥 Go to Recorder
+          </button>
+          <button class="btn-danger" onclick="clearAllSessionsConfirm()">
+            🗑️ Clear All
+          </button>
+        </div>
+      </div>
+
+      <div id="messageContainer"></div>
+
+      <div class="content-grid">
+        <!-- Sidebar with sessions list -->
+        <div class="sidebar">
+          <div class="upload-section">
+            <h2>Upload Session</h2>
+            <div class="file-input-wrapper">
+              <input
+                type="file"
+                id="fileInput"
+                accept=".json"
+                onchange="handleFileUpload(event)"
+              />
+              <label for="fileInput" class="file-input-label">
+                📁 Choose JSON File
+              </label>
+            </div>
+            <div class="file-name" id="fileName">No file selected</div>
+          </div>
+
+          <h2>Saved Sessions</h2>
+          <div class="sessions-list" id="sessionsList">
+            <p style="color: #6b7280; font-size: 14px">Loading sessions...</p>
+          </div>
+        </div>
+
+        <!-- Player area -->
+        <div class="player-container">
+          <div id="playerContent">
+            <div class="empty-state">
+              <div class="empty-state-icon">🎬</div>
+              <h3>No Session Selected</h3>
+              <p>
+                Select a session from the list or upload a JSON file to start
+                replay
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js"></script>
+    <script src="db.js"></script>
+
+    <script>
+      let currentPlayer = null;
+      let currentSessionId = null;
+
+      // Show message
+      function showMessage(text, type = "success") {
+        const container = document.getElementById("messageContainer");
+        const message = document.createElement("div");
+        message.className = `message message-${type}`;
+        message.textContent = text;
+        container.innerHTML = "";
+        container.appendChild(message);
+
+        setTimeout(() => {
+          message.remove();
+        }, 3000);
+      }
+
+      // Load and display saved sessions
+      async function loadSessions() {
+        try {
+          const sessions = await getAllSessions();
+          const listContainer = document.getElementById("sessionsList");
+
+          if (sessions.length === 0) {
+            listContainer.innerHTML =
+              '<p style="color: #6b7280; font-size: 14px;">No saved sessions yet.</p>';
+            return;
+          }
+
+          // Sort by timestamp (newest first)
+          sessions.sort((a, b) => b.timestamp - a.timestamp);
+
+          listContainer.innerHTML = sessions
+            .map(
+              (session) => `
+          <div class="session-item ${
+            currentSessionId === session.id ? "active" : ""
+          }" 
+               onclick="loadSessionForReplay(${session.id})"
+               id="session-${session.id}">
+            <div class="session-name">${session.name}</div>
+            <div class="session-meta">
+              📊 ${session.eventCount} events<br>
+              ⏱️ ${(session.duration / 1000).toFixed(1)}s<br>
+              📅 ${new Date(session.timestamp).toLocaleString()}
+            </div>
+            <div class="session-actions" onclick="event.stopPropagation()">
+              <button class="btn-primary btn-small" onclick="downloadSessionById(${
+                session.id
+              })">💾</button>
+              <button class="btn-danger btn-small" onclick="deleteSessionById(${
+                session.id
+              })">🗑️</button>
+            </div>
+          </div>
+        `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error loading sessions:", error);
+          document.getElementById("sessionsList").innerHTML =
+            '<p style="color: #ef4444; font-size: 14px;">Error loading sessions</p>';
+        }
+      }
+
+      // Load session for replay
+      async function loadSessionForReplay(sessionId) {
+        try {
+          const session = await getSession(sessionId);
+          if (!session || !session.events || session.events.length === 0) {
+            showMessage("Invalid session data", "error");
+            return;
+          }
+
+          currentSessionId = sessionId;
+
+          // Update active state in list
+          document.querySelectorAll(".session-item").forEach((item) => {
+            item.classList.remove("active");
+          });
+          const activeItem = document.getElementById(`session-${sessionId}`);
+          if (activeItem) {
+            activeItem.classList.add("active");
+          }
+
+          playSession(session);
+        } catch (error) {
+          console.error("Error loading session:", error);
+          showMessage("Error loading session: " + error.message, "error");
+        }
+      }
+
+      // Play session with rrweb-player
+      function playSession(session) {
+        const playerContent = document.getElementById("playerContent");
+
+        // Destroy existing player
+        if (currentPlayer) {
+          playerContent.innerHTML = "";
+          currentPlayer = null;
+        }
+
+        // Create session info header
+        const header = document.createElement("div");
+        header.className = "session-info-header";
+        header.innerHTML = `
+        <div class="session-info-title">${session.name}</div>
+        <div class="session-info-meta">
+          <div class="meta-item">
+            <span>📊</span>
+            <span>${session.eventCount} events</span>
+          </div>
+          <div class="meta-item">
+            <span>⏱️</span>
+            <span>Duration: ${(session.duration / 1000).toFixed(1)}s</span>
+          </div>
+          <div class="meta-item">
+            <span>📅</span>
+            <span>${new Date(session.timestamp).toLocaleString()}</span>
+          </div>
+        </div>
+      `;
+
+        // Create player wrapper
+        const playerWrapper = document.createElement("div");
+        playerWrapper.className = "player-wrapper";
+        playerWrapper.id = "replayPlayer";
+
+        playerContent.innerHTML = "";
+        playerContent.appendChild(header);
+        playerContent.appendChild(playerWrapper);
+
+        // Initialize rrweb player
+        try {
+          // Check if rrwebPlayer is available
+          if (typeof rrwebPlayer === "undefined") {
+            throw new Error(
+              "rrwebPlayer library not loaded. Please refresh the page."
+            );
+          }
+
+          currentPlayer = new rrwebPlayer({
+            target: playerWrapper,
+            props: {
+              events: session.events,
+              width: 1024,
+              height: 576,
+              autoPlay: false,
+              speedOption: [1, 2, 4, 8],
+              showController: true,
+              tags: {},
+            },
+          });
+
+          showMessage("Session loaded successfully!", "success");
+        } catch (error) {
+          console.error("Error creating player:", error);
+          showMessage("Error creating player: " + error.message, "error");
+          playerContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">❌</div>
+            <h3>Error Loading Session</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+        }
+      }
+
+      // Handle file upload
+      function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById("fileName").textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const events = JSON.parse(e.target.result);
+
+            if (!Array.isArray(events) || events.length === 0) {
+              showMessage(
+                "Invalid session file: must be an array of events",
+                "error"
+              );
+              return;
+            }
+
+            // Create a temporary session object
+            const session = {
+              events: events,
+              name: file.name.replace(".json", ""),
+              timestamp: Date.now(),
+              duration: 0, // Will be calculated from events if needed
+              eventCount: events.length,
+            };
+
+            currentSessionId = null;
+            document.querySelectorAll(".session-item").forEach((item) => {
+              item.classList.remove("active");
+            });
+
+            playSession(session);
+            showMessage("File loaded successfully!", "success");
+          } catch (error) {
+            console.error("Error parsing JSON:", error);
+            showMessage("Error parsing JSON file: " + error.message, "error");
+          }
+        };
+
+        reader.onerror = function () {
+          showMessage("Error reading file", "error");
+        };
+
+        reader.readAsText(file);
+      }
+
+      // Download specific session
+      async function downloadSessionById(id) {
+        try {
+          const session = await getSession(id);
+          const dataStr = JSON.stringify(session.events, null, 2);
+          const dataBlob = new Blob([dataStr], { type: "application/json" });
+          const url = URL.createObjectURL(dataBlob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `${session.name.replace(/\s+/g, "-")}.json`;
+          link.click();
+          URL.revokeObjectURL(url);
+          showMessage("Session downloaded", "success");
+        } catch (error) {
+          console.error("Error downloading session:", error);
+          showMessage("Error downloading session", "error");
+        }
+      }
+
+      // Delete specific session
+      async function deleteSessionById(id) {
+        if (!confirm("Are you sure you want to delete this session?")) {
+          return;
+        }
+
+        try {
+          await deleteSession(id);
+
+          // If this was the current session, clear the player
+          if (currentSessionId === id) {
+            currentSessionId = null;
+            document.getElementById("playerContent").innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">🎬</div>
+              <h3>No Session Selected</h3>
+              <p>Select a session from the list or upload a JSON file to start replay</p>
+            </div>
+          `;
+          }
+
+          showMessage("Session deleted", "success");
+          loadSessions();
+        } catch (error) {
+          console.error("Error deleting session:", error);
+          showMessage("Error deleting session", "error");
+        }
+      }
+
+      // Clear all sessions
+      async function clearAllSessionsConfirm() {
+        if (
+          !confirm(
+            "Are you sure you want to delete ALL sessions? This cannot be undone."
+          )
+        ) {
+          return;
+        }
+
+        try {
+          await clearAllSessions();
+          currentSessionId = null;
+          document.getElementById("playerContent").innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🎬</div>
+            <h3>No Session Selected</h3>
+            <p>Select a session from the list or upload a JSON file to start replay</p>
+          </div>
+        `;
+          showMessage("All sessions cleared", "success");
+          loadSessions();
+        } catch (error) {
+          console.error("Error clearing sessions:", error);
+          showMessage("Error clearing sessions", "error");
+        }
+      }
+
+      // Initialize on page load
+      window.addEventListener("load", () => {
+        loadSessions();
+      });
+    </script>
+  </body>
+</html>

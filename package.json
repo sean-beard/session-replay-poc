@@ -1,0 +1,10 @@
+{
+  "name": "session-replay",
+  "version": "1.0.0",
+  "description": "Web application session replay tool.",
+  "scripts": {
+    "start": "python3 -m http.server 8000"
+  },
+  "author": "",
+  "license": "ISC"
+}
