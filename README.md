@@ -2,6 +2,8 @@
 
 A simple proof of concept for session replay using [rrweb](https://github.com/rrweb-io/rrweb). This POC demonstrates recording user interactions on a web page and replaying them with full visual accuracy.
 
+This repo intentionally uses **pinned CDN / UMD bundles** so the demo stays build-free and predictable for talks.
+
 ## 🎯 Features
 
 - **Record user sessions** with all interactions (clicks, inputs, scrolls, etc.)
@@ -18,6 +20,8 @@ A simple proof of concept for session replay using [rrweb](https://github.com/rr
 - A modern web browser (Chrome, Firefox, Safari, or Edge)
 - Python 3 (or any simple HTTP server)
 - No build tools or installation required!
+
+This is a **no-build demo**. It does not use the latest recommended `@rrweb/record` / `@rrweb/replay` package setup from rrweb's docs. Instead, it uses the legacy browser-global pattern on purpose to keep the repo easy to run live.
 
 ### Usage
 
@@ -58,25 +62,25 @@ A simple proof of concept for session replay using [rrweb](https://github.com/rr
 session-replay/
 ├── record.html       # Recording page with interactive demo
 ├── replay.html       # Replay page with video-like player
-├── db.js            # IndexedDB helper functions
-├── package.json     # Project metadata
-├── POC_PLAN.md      # Detailed implementation plan
-└── README.md        # This file
+├── db.js             # IndexedDB helper functions
+├── package.json      # Project metadata
+└── README.md         # This file
 ```
 
 ## 🎬 How It Works
 
 ### Recording
 
-1. **rrweb** observes DOM mutations and user interactions
+1. **rrweb** observes DOM mutations and other incremental browser events
 2. Events are collected in memory as they occur
 3. Events can be saved to IndexedDB or downloaded as JSON
-4. Each session includes metadata (timestamp, duration, event count)
+4. The recorder also emits periodic full snapshots via checkout for more robust replay
+5. Each session includes metadata (timestamp, duration, event count)
 
 ### Replay
 
 1. Load session events from IndexedDB or uploaded file
-2. **rrweb-player** reconstructs the DOM and interactions
+2. **rrweb-player** provides the replay UI on top of rrweb's replay engine
 3. Playback includes timeline, speed controls, and pause/play
 4. Sessions can be scrubbed through like a video
 
@@ -93,7 +97,7 @@ This POC uses **IndexedDB** for storing sessions locally:
 
 ### Technologies Used
 
-- **[rrweb](https://github.com/rrweb-io/rrweb)** - Session recording and replay
+- **[rrweb](https://github.com/rrweb-io/rrweb)** - Pinned UMD bundle for browser recording
 - **[rrweb-player](https://github.com/rrweb-io/rrweb/tree/master/packages/rrweb-player)** - Feature-rich replay UI
 - **IndexedDB** - Browser database for persistent storage
 - **Vanilla JavaScript** - No framework dependencies
@@ -116,6 +120,7 @@ Provides helper functions for IndexedDB operations:
 - Includes interactive demo content for testing
 - Shows list of previously saved sessions
 - Can export sessions as JSON files
+- Uses a pinned rrweb UMD bundle loaded from jsDelivr
 
 #### replay.html
 
@@ -123,6 +128,7 @@ Provides helper functions for IndexedDB operations:
 - Allows file upload for external sessions
 - Uses rrweb-player for playback controls
 - Shows session metadata (duration, events, timestamp)
+- Uses pinned rrweb and rrweb-player UMD bundles loaded from jsDelivr
 
 ## 📊 Session Data Format
 
